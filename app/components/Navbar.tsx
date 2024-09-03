@@ -38,10 +38,10 @@ async function Navbar() {
         ) : (
           <div className="flex items-center gap-2">
             <Button asChild>
-              <LoginLink postLoginRedirectURL="/">Login</LoginLink>
+              <LoginLink>Login</LoginLink>
             </Button>
             <Button asChild variant="outline">
-              <RegisterLink postLoginRedirectURL="/">Register</RegisterLink>
+              <RegisterLink>Register</RegisterLink>
             </Button>
           </div>
         )}
