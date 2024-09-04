@@ -1,164 +1,42 @@
 "use client";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import React, { useEffect, useState } from "react";
-import { SelectCategory } from "../components/SelectCategory";
-import { Textarea } from "@/components/ui/textarea";
-import { TipTapEditor } from "../components/Editor";
-import { type JSONContent } from "@tiptap/react";
-import { UploadDropzone } from "@/lib/uploadthing";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { SellProduct, type State } from "@/app/actions";
-import { useFormState } from "react-dom";
-import { Submitbutton } from "../components/Submitbutton";
+import { Card } from "@/components/ui/card";
 
-export default function SellRoute() {
-  const initalState: State = { message: "", status: undefined };
-  const [json, setJson] = useState<null | JSONContent>(null);
-  const [images, setImages] = useState<null | string[]>(null);
-  const [productFile, SetProductFile] = useState<null | string>(null);
-  const [state, formAction] = useFormState(SellProduct, initalState);
+import { SellForm } from "../components/form/SellForm";
+import prisma from "@/lib/prisma";
+import { redirect } from "next/navigation";
+import { unstable_noStore as noStore } from "next/cache";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
-  console.log(state?.errors);
-  useEffect(() => {
-    if (state.status === "success") {
-      toast.success(state.message);
-    } else if (state.status === "error") {
-      toast.error(state.message);
-    }
-  }, [state]);
+async function getData(userId: string) {
+  const data = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      stripeConnectedLinked: true,
+    },
+  });
+
+  if (data?.stripeConnectedLinked === false) {
+    return redirect("/billing");
+  }
+
+  return null;
+}
+
+export default async function SellRoute() {
+  noStore();
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+  const data = await getData(user.id);
   return (
     <section className="max-w-7xl mx-auto px-4 md:px-8 mb-14">
       <Card>
-        <form action={formAction}>
-          <CardHeader>
-            <CardTitle>Sell your product witch ease</CardTitle>
-            <CardDescription>
-              Pleasee describe your product here in detail so that it can be
-              sold
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-y-10">
-            <div className="flex flex-col gap-y-2">
-              <Label>Name</Label>
-              <Input
-                name="name"
-                type="text"
-                placeholder="Name of your Product"
-                required
-                minLength={3}
-              />
-              {state?.errors?.["name"]?.[0] && (
-                <p className="text-destructive">
-                  {state?.errors?.["name"]?.[0]}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col gap-y-2">
-              <Label>Category</Label>
-              <SelectCategory />
-              {state?.errors?.["category"]?.[0] && (
-                <p className="text-destructive">
-                  {state?.errors?.["category"]?.[0]}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-y-2">
-              <Label>Price</Label>
-              <Input
-                placeholder="29$"
-                type="number"
-                name="price"
-                required
-                min={1}
-              />
-              {state?.errors?.["price"]?.[0] && (
-                <p className="text-destructive">
-                  {state?.errors?.["price"]?.[0]}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col gap-y-2">
-              <Label>Small Summary</Label>
-              <Textarea
-                name="smallDescription"
-                placeholder="Pleae describe your product shortly right here..."
-                required
-                minLength={10}
-              />
-              {state?.errors?.["smallDescription"]?.[0] && (
-                <p className="text-destructive">
-                  {state?.errors?.["smallDescription"]?.[0]}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-y-2">
-              <input
-                type="hidden"
-                name="description"
-                value={JSON.stringify(json)}
-              />
-              <Label>Description</Label>
-              <TipTapEditor json={json} setJson={setJson} />
-              {state?.errors?.["description"]?.[0] && (
-                <p className="text-destructive">
-                  {state?.errors?.["description"]?.[0]}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col gap-y-2">
-              <input
-                type="hidden"
-                name="images"
-                value={JSON.stringify(images)}
-              />
-              <Label>Product Image</Label>
-              <UploadDropzone
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                  setImages(res.map((item) => item.url));
-                  toast.success("Your images have been uploaded");
-                }}
-                onUploadError={(error: Error) => {
-                  toast.error("Something went wrong, try again");
-                }}
-              />
-            </div>
-
-            <div className="flex flex-col gap-y-2">
-              <input
-                type="hidden"
-                name="productFile"
-                value={productFile ?? ""}
-              />
-              <Label>Product File</Label>
-              <UploadDropzone
-                endpoint="productFileUpload"
-                onClientUploadComplete={(res) => {
-                  SetProductFile(res[0].url);
-                  toast.success("Your Product file has been uplaoded!");
-                }}
-                onUploadError={(error: Error) => {
-                  toast.error("Something went wrong, try again");
-                }}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="mt-5">
-            <Submitbutton title="Create your Product" />
-          </CardFooter>
-        </form>
+        <SellForm />
       </Card>
     </section>
   );
