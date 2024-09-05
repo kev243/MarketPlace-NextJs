@@ -1,8 +1,11 @@
-import prisma from "@/lib/prisma";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextResponse } from "next/server";
+import { unstable_noStore as noStore } from "next/cache";
+import prisma from "@/lib/prisma";
+import { stripe } from "@/lib/stripe";
 
 export async function GET() {
+  noStore();
   const { getUser } = getKindeServerSession();
   const user = await getUser();
 
@@ -17,6 +20,21 @@ export async function GET() {
   });
 
   if (!dbUser) {
+    const account = await stripe.accounts.create({
+      email: user.email as string,
+      controller: {
+        losses: {
+          payments: "application",
+        },
+        fees: {
+          payer: "application",
+        },
+        stripe_dashboard: {
+          type: "express",
+        },
+      },
+    });
+
     dbUser = await prisma.user.create({
       data: {
         id: user.id,
@@ -25,14 +43,12 @@ export async function GET() {
         email: user.email ?? "",
         profileImage:
           user.picture ?? `https://avatar.vercel.sh/${user.given_name}`,
+        connectedAccountId: account.id,
       },
     });
   }
-  //   return NextResponse.redirect(
-  //     process.env.NODE_ENV === "development"
-  //       ? "http://localhost:3000"
-  //       : "https://marshal-ui-yt.vercel.app/" //a changer
-  //   );
 
-  return NextResponse.redirect("http://localhost:3000");
+  return NextResponse.redirect(
+    process.env.NODE_ENV === "development" ? "http://localhost:3000" : ""
+  );
 }

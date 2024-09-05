@@ -123,6 +123,9 @@ export function SellForm() {
               toast.error("Something went wrong, try again");
             }}
           />
+          {state?.errors?.["images"]?.[0] && (
+            <p className="text-destructive">{state?.errors?.["images"]?.[0]}</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-y-2">
@@ -138,6 +141,11 @@ export function SellForm() {
               toast.error("Something went wrong, try again");
             }}
           />
+          {state?.errors?.["productFile"]?.[0] && (
+            <p className="text-destructive">
+              {state?.errors?.["productFile"]?.[0]}
+            </p>
+          )}
         </div>
       </CardContent>
       <CardFooter className="mt-5">

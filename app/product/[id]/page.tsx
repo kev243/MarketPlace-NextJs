@@ -11,6 +11,7 @@ import Image from "next/image";
 import { ProductDescription } from "@/app/components/ProductDescription";
 import { BuyButton } from "@/app/components/Submitbutton";
 import { unstable_noStore as noStore } from "next/cache";
+import { BuyProduct } from "@/app/actions";
 
 async function getData(id: string) {
   const data = await prisma.product.findUnique({
@@ -71,7 +72,7 @@ export default async function ProductPage({
         </h1>
 
         <p className="mt-2 text-muted-foreground">{data?.smallDescription}</p>
-        <form action={""}>
+        <form action={BuyProduct}>
           <input type="hidden" name="id" value={data?.id} />
           <BuyButton price={data?.price as number} />
         </form>

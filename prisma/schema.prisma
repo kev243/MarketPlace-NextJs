@@ -17,7 +17,7 @@ model User {
   firstName             String
   lastName              String
   profileImage          String
-  // connectedAccountId    String  @unique
+  connectedAccountId    String  @unique
   stripeConnectedLinked Boolean @default(false)
 
   Product Product[]
